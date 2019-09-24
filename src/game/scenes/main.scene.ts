@@ -1,14 +1,13 @@
-import { AbstractScene } from './abstract.scene';
 import { Key } from 'ts-keycode-enum';
+import { GameModelsFactory } from '../core/factories/game-models.factory';
+import { IGameScene } from './scene.interface';
+import { PositionGizmo } from 'babylonjs';
 
-export class MainScene extends AbstractScene {
+export class MainScene implements IGameScene {
+    public modelsFactory: GameModelsFactory;
+    public scene: BABYLON.Scene;
     private camera: BABYLON.FreeCamera;
     private light: BABYLON.Light;
-
-    constructor(scene: BABYLON.Scene) {
-        super(scene);
-        this.createScene();
-    }
 
     private initSkyBox(): void {
         const skybox = BABYLON.Mesh.CreateBox('skyBox', 5000.0, this.scene);
@@ -78,7 +77,7 @@ export class MainScene extends AbstractScene {
         }
     }
 
-    public createScene(): void {
+    public buildScene(): void {
         this.scene.gravity = new BABYLON.Vector3(0, -0.9, 0);
         this.initCamera();
         this.initSkyBox();
@@ -100,13 +99,34 @@ export class MainScene extends AbstractScene {
         ground.material = grass;
         ground.actionManager = new BABYLON.ActionManager(this.scene);
 
-        const sphere = BABYLON.MeshBuilder.CreateSphere('sphere1', { segments: 10, diameter: 40 }, this.scene);
-        sphere.position.y = 20;
+        const person = this.modelsFactory.createPerson();
+        person.viewModel.position.y = 20;
         ground.actionManager.registerAction(
             new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, (evt) => {
                 const pickResult = this.scene.pick(evt.pointerX, evt.pointerY);
-                sphere.position.x = pickResult.pickedPoint.x;
-                sphere.position.z = pickResult.pickedPoint.z;
+                console.warn(pickResult.pickedPoint, person.viewModel.position);
+                const timer = setInterval(() => {
+                    const radyX = Math.round(person.viewModel.position.x) === pickResult.pickedPoint.x;
+                    const radyY = Math.round(person.viewModel.position.z) === pickResult.pickedPoint.z;
+                    if (radyX && radyY) {
+                        clearTimeout(timer);
+                        this.scene.beforeRender = null;
+                    } else {
+                        this.scene.beforeRender = () => {
+                            if (pickResult.pickedPoint.x > person.viewModel.position.x) {
+                                person.viewModel.position.x++;
+                            } else {
+                                person.viewModel.position.x--;
+                            }
+                            if (pickResult.pickedPoint.z > person.viewModel.position.z) {
+                                person.viewModel.position.z++;
+                            } else {
+                                person.viewModel.position.z--;
+                            }
+                        };
+                    }
+                    console.warn(person.viewModel.position);
+                }, person.speed);
             })
         );
 
