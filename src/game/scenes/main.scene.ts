@@ -1,25 +1,26 @@
 import { Key } from 'ts-keycode-enum';
 import { GameModelsFactory } from '../core/factories/game-models.factory';
-import { IGameScene } from './scene.interface';
+import { IGameScene } from '../interfaces/core/scene.interface';
 import { GameScene } from '../core/fasads/game-scene';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { UISceneService } from '../services/ui.service';
+import { MainUIScene } from './ui/main.ui';
 
 export class MainScene implements IGameScene {
     public modelsFactory: GameModelsFactory;
     public scene: GameScene;
+    public uiSceneSrv: UISceneService;
     private camera: BABYLON.FreeCamera;
-    private light: BABYLON.Light;
     private subsciber = new Subject();
 
     public buildScene(): void {
         this.scene.$sceneKeyDown.pipe(takeUntil(this.subsciber)).subscribe(evt => this.handleEvent(evt));
         this.scene.createSkyBox(5000, 'assets/skybox');
         this.scene.scene.gravity = new BABYLON.Vector3(0, -0.9, 0);
-        this.renderUI();
         this.initCamera();
 
-        this.light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), this.scene.scene);
+        const light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0, 1, 0), this.scene.scene);
 
         const ground = BABYLON.MeshBuilder.CreateGround('ground',
             { width: 150, height: 150, subdivisions: 2 }, this.scene.scene);
@@ -33,7 +34,7 @@ export class MainScene implements IGameScene {
         ground.actionManager.registerAction(
             new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, (evt) => {
                 const pickResult = this.scene.scene.pick(evt.pointerX, evt.pointerY);
-                console.warn(pickResult.pickedPoint, person.viewModel.position);
+                // console.warn(pickResult.pickedPoint, person.viewModel.position);
                 const timer = setInterval(() => {
                     const radyX = Math.round(person.viewModel.position.x) === pickResult.pickedPoint.x;
                     const radyY = Math.round(person.viewModel.position.z) === pickResult.pickedPoint.z;
@@ -54,10 +55,11 @@ export class MainScene implements IGameScene {
                             }
                         };
                     }
-                    console.warn(person.viewModel.position);
+                    // console.warn(person.viewModel.position);
                 }, person.speed);
             })
         );
+        this.uiSceneSrv.createAndRunScene(MainUIScene);
     }
 
     public initCamera(): void {
@@ -65,31 +67,11 @@ export class MainScene implements IGameScene {
         this.camera.setTarget(new BABYLON.Vector3(2, 3, 50));
         // this.camera.attachControl(this.canvas, false);
         this.camera.rotation = new BABYLON.Vector3(0.8, 0.8, 0);
-    }
-
-    public renderUI(): void {
-        const ui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
-        ui.layer.layerMask = 2;
-
-        const panel = new BABYLON.GUI.StackPanel();
-        panel.width = '220px';
-        panel.fontSize = '14px';
-        panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
-        panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
-        ui.addControl(panel);
-
-        const button1 = new BABYLON.GUI.Button('button1');
-
-        button1.width = '100px';
-        button1.height = '30px';
-        button1.color = '#fefefe';
-        button1.addControl(new BABYLON.GUI.TextBlock('button1-text', 'My first button'));
-        button1.onPointerClickObservable.add(evt => console.warn(evt));
-        panel.addControl(button1);
+        this.camera.layerMask = 1;
     }
 
     public handleEvent(evt: BABYLON.ActionEvent): void {
-        console.warn(evt);
+        // console.warn(evt);
         const $e: KeyboardEvent = evt.sourceEvent;
         switch ($e.keyCode) {
             case Key.UpArrow: {
