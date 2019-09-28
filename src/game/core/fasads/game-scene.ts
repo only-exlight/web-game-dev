@@ -23,6 +23,9 @@ export class GameScene {
 
     private init(scene: BABYLON.Scene): void {
         this.babylonScene = scene;
+        const physicsPlugin = new BABYLON.AmmoJSPlugin(true);
+        this.babylonScene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), physicsPlugin);
+        this.scene.collisionsEnabled = true;
         this.scene.actionManager = new BABYLON.ActionManager(this.scene);
         const exActions: BABYLON.ExecuteCodeAction[] = [];
         exActions.push(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, evt => this.sceneKeyDown$.next(evt)));

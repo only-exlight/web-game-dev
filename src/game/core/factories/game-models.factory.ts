@@ -9,7 +9,13 @@ export class GameModelsFactory {
 
     public createPerson(): TestPerson {
         const person = new TestPerson();
-        person.viewModel = BABYLON.MeshBuilder.CreateBox('person', { size: 20 }, this.sceneSrv.scene);
+        const viewModel = BABYLON.Mesh.CreateBox('person', 20, this.sceneSrv.scene);
+        const impostor = new BABYLON.PhysicsImpostor(viewModel, 1, {
+            mass: 100
+        });
+        viewModel.physicsImpostor = impostor;
+        viewModel.checkCollisions = true;
+        person.viewModel = viewModel;
         return person;
     }
 }
